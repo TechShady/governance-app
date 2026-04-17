@@ -1,0 +1,15 @@
+{
+  "$schema": "./.dt-app/app.config.schema.json",
+  "environmentUrl": "https://guu84124.apps.dynatrace.com/",
+  "app": {
+    "name": "Governance",
+    "version": "1.0.4",
+    "description": "Dashboard governance: usage, ownership, DQL analysis, and clones",
+    "id": "my.governance.app",
+    "scopes": [
+      { "name": "document:documents:read", "comment": "read dashboards" },
+      { "name": "document:environment-shares:read", "comment": "read shared dashboards" },
+      { "name": "iam:users:read", "comment": "resolve user IDs to names" }
+    ]
+  }
+}
