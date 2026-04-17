@@ -57,12 +57,12 @@ export const Governance = ({ topN, timeframe }: GovernanceProps) => {
         setDqlMap(null);
         const all: DashboardMeta[] = [];
         let nextPageKey: string | undefined;
-        const fromIso = timeframe.from.absoluteDate;
-        const toIso = timeframe.to.absoluteDate;
+        const fromDate = new Date(timeframe.from.absoluteDate);
+        const toDate = new Date(timeframe.to.absoluteDate);
 
         do {
           const params: any = {
-            filter: `type == 'dashboard' and modificationInfo.lastModifiedTime >= '${fromIso}' and modificationInfo.lastModifiedTime <= '${toIso}'`,
+            filter: "type == 'dashboard'",
             pageSize: 1000,
           };
           if (nextPageKey) params.pageKey = nextPageKey;
@@ -70,6 +70,8 @@ export const Governance = ({ topN, timeframe }: GovernanceProps) => {
           const response = await documentsClient.listDocuments(params);
 
           for (const doc of response.documents ?? []) {
+            const lmt = doc.modificationInfo?.lastModifiedTime ?? null;
+            if (lmt && (lmt < fromDate || lmt > toDate)) continue;
             all.push({
               id: doc.id ?? "",
               name: doc.name ?? "Untitled",
@@ -179,6 +181,8 @@ export const Governance = ({ topN, timeframe }: GovernanceProps) => {
   }, [dashboards, topN]);
 
   // DQL scan: downloads each dashboard content
+  const dqlPrefixPattern = /^(fetch|timeseries|smartscapeEdges|smartscapeNodes)\b/i;
+
   const scanDql = async () => {
     setDqlScanning(true);
     setDqlProgress(0);
@@ -197,12 +201,12 @@ export const Governance = ({ topN, timeframe }: GovernanceProps) => {
           for (const tile of Object.values(json.tiles) as any[]) {
             if (tile.query && typeof tile.query === "string") {
               const q = tile.query.trim();
-              if (q) qMap[q] = (qMap[q] ?? 0) + 1;
+              if (q && dqlPrefixPattern.test(q)) qMap[q] = (qMap[q] ?? 0) + 1;
             }
             if (Array.isArray(tile.queries)) {
               for (const tq of tile.queries) {
                 const q = typeof tq === "string" ? tq : tq?.query;
-                if (q) qMap[q.trim()] = (qMap[q.trim()] ?? 0) + 1;
+                if (q && dqlPrefixPattern.test(q.trim())) qMap[q.trim()] = (qMap[q.trim()] ?? 0) + 1;
               }
             }
           }
